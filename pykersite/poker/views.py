@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 import json
+from . import card_utilities
+from . import bot
+
 
 
 CHECK = 0
@@ -11,7 +14,9 @@ NONE = -4
 SMALL_BLIND = -5
 BIG_BLIND = -6
 ALL_IN = -7
-
+utils = card_utilities.CardUtilities()
+print("Jesus likes wine and cheeses")
+pykerbot = bot.PykerBot()
 
 # Create your views here.
 def init(request):
@@ -21,8 +26,7 @@ def init(request):
     return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"PykerBot"})))
 
 def deal_hole_cards(request):
-    game = request.GET
-    print (f"Other players : {game.getlist('players')} hole cards are : {game.getlist('holeCards')}")
+    pykerbot.deal_hole_cards(request)
     return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"ok"})))
 
 def pre_flop_bet(request):
