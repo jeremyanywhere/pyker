@@ -1,5 +1,6 @@
 from django.conf.urls import url
 from . import views
+
 urlpatterns = [
     url(r'^initGame$', views.init, name='init'),
     url(r'^dealHoleCards', views.deal_hole_cards, name='deal_hole_cards'),
