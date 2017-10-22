@@ -39,8 +39,12 @@ def deal_hole_cards(request):
 def pre_flop_bet(request):
     game = request.GET
     minimum_bet = int(game['minimumBet'])
+    current_call = int(game['currentCall'])
+    my_pot = int(game['pot'])
+    my_chip_stack = game['chipStack']
+    res = bot.PykerBot.pre_flop_bet(current_call, minimum_bet, my_pot, my_chip_stack)
     print (f"Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
-    return HttpResponse(json.dumps(dict({"amount":minimum_bet,"betType":BET,"response":""})))
+    return HttpResponse(json.dumps(res))
 
 def deal_flop(request):
     game = request.GET

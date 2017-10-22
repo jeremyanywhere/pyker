@@ -23,7 +23,7 @@ class CardUtilities(object):
     def constructUrl(self, p_hand, value):
         print (f"Trying to construct URL with {p_hand}")
         hand_tuple = tuple({('myHand',x) for x in p_hand})
-        constructed_url = "http://{}?{}".format(settings.CARD_UTILITIES_BASE_URL,parse.urlencode(hand_tuple), value)
+        constructed_url = "http://{}?{}{}".format(settings.CARD_UTILITIES_BASE_URL,parse.urlencode(hand_tuple), value)
         print (f"Constructed URL is {constructed_url}")
         return constructed_url
 
