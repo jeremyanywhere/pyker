@@ -3,24 +3,26 @@ import sys
 
 from . import card_utilities
 
-ACE_LOW = "0A23456789XJQK"
-ACE_HIGH = "0123456789XQKA"
-CHECK = 0
-FOLD = -1
-CALL = -2
-BET  = -3
-NONE = -4
-SMALL_BLIND = -5
-BIG_BLIND = -6
-ALL_IN = -7
+
 
 
 class PykerBot(object):
-
+    ACE_LOW = "0A23456789XJQK"
+    ACE_HIGH = "0123456789XQKA"
+    CHECK = 0
+    FOLD = -1
+    CALL = -2
+    BET  = -3
+    NONE = -4
+    SMALL_BLIND = -5
+    BIG_BLIND = -6
+    ALL_IN = -7
     def __init__(self):
         self.log = logging.getLogger('pyker')
         self.utils = card_utilities.CardUtilities()
         self.betTotal = 0
+
+
 
     def init(self, request):
         game = request.GET
@@ -40,11 +42,46 @@ class PykerBot(object):
         self.log.debug  (f'XXXX Cards Score  {self.utils.getHandValue(self.hand, "score")}')
         self.defineHoleCardsQuality()
 
-    def pre_flop_bet(self, ):
+    def pre_flop_bet(self, request):
+        # need a combination of hole quality.
+        # since we aren't calculating actual pot odds, but a 1-5 strength evaluation of chances.. we have to go with
+        # 0% chance to 80% chance.  We call our
+        # pot odds = our bet / (our bet + the pot)
+        # having the best cards pre-flop, (i.e. AA) only gives us 80% chance of winning, so max. pot odds are 80%
+        game = request.GET
+        minimum_bet = int(game['minimumBet'])
+        current_call = int(game['currentCall'])
+        pot = int(game['pot'])
+        chip_stack = int[game['chipStack']]
 
+        round_equity_factor = 0.16
+        card_equity = self.defineHoleCardsQuality() * round_equity_factor
+        if card_equity < 2* round_equity_factor or current_call > chip_stack:
+            return  {"amount":0,"betType":PykerBot.FOLD,"response":""}
 
+        # from java interface: numRaises,  def pot, def currentCall, def minimumBet, def chipStack
 
-        return {"amount":minimum_bet,"betType":BET,"response":""}
+        # start by trying a bet..
+        pot_odds = (minimum_bet / (minimum_bet + pot))
+        if card_equity >= pot_odds:
+            if (minimum_bet < chip_stack):
+                return {"amount":minimum_bet,"betType":PykerBot.BET,"response":""}
+            else:
+                if card_equity < 5 * round_equity_factor:
+                    return {"amount":0,"betType":PykerBot.FOLD,"response":""}
+                else:
+                    return {"amount":chip_stack,"betType":PykerBot.ALL_IN,"response":""}
+        # now try with a call
+        pot_odds = (current_call / (current_call + pot))
+        if card_equity >= pot_odds:
+            if (current_call < chip_stack):
+                return {"amount":current_call,"betType":PykerBot.BET,"response":""}
+            else:
+                if card_equity < 5 * round_equity_factor:
+                    return {"amount":0,"betType":PykerBot.FOLD,"response":""}
+                else:
+                    return {"amount":chip_stack,"betType":PykerBot.ALL_IN,"response":""}
+        return {"amount":0,"betType":PykerBot.FOLD,"response":""}
 
     def defineHoleCardsQuality(self):
         # break down int 1-5, 5 being the highest.
@@ -125,24 +162,22 @@ class PykerBot(object):
 
 
     def defineRiverCardsQuality(self):
-        # the 5s are all the obvious ones.
-        if ((self.utils.checkHandCondition(self.hand, "containsStraight") and
-                 self.utils.checkHandCondition(self.hand, "containsFlush")) or
-                self.utils.checkHandCondition(self.hand, "containsFourOfAKind") or
-                (self.utils.checkHandCondition(self.hand, "containsFullHouse") and self.utils.getHandValue(self.hand, "scoreFullHouse" > 140))):
+
+        if (self.utils.checkHandCondition(self.hand, "containsStraight") or
+                 self.utils.checkHandCondition(self.hand, "containsFlush")):
             return 5
+
+        if (self.utils.checkHandCondition(self.hand, "containsFourOfAKind") or
+                self.utils.checkHandCondition(self.hand, "containsFullHouse")):
+            return 4
 
         if (self.utils.checkHandCondition(self.hand, "containsThreeOfAKind") or
                 self.utils.checkHandCondition(self.hand, "containsFlush")):
-            return 4
+            return 3
 
         if (self.utils.checkHandCondition(self.hand, "containsStraight" or
             (self.utils.checkHandCondition(self.hand, "exactlyOnePair") and
                      self.utils.getHandValue(self.hand, "scoreNOfAKind", value=2) > 2304))):
-            return 3
-
-        if (self.utils.checkHandCondition(self.hand, "exactlyOnePair") and
-                    self.utils.getHandValue(self.hand, "scoreNOfAKind", value=2) < 2305):
             return 2
 
         return 1  # it is a folder...
