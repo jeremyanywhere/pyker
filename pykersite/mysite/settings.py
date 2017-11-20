@@ -120,5 +120,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 #pyker configurations
 
-CARD_UTILITIES_BASE_URL = 'localhost:8080/hand'
+CARD_UTILITIES_BASE_URL = '192.168.0.128:8080/hand'
 

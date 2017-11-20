@@ -10,7 +10,7 @@ class PykerBot(object):
 
     def __init__(self):
         self.log = logging.getLogger('pyker')
-        self.utils = card_utilities.CardUtilities()
+        self.utils = CardUtilities()
         self.betTotal = 0
 
 
@@ -32,19 +32,43 @@ class PykerBot(object):
         self.log.debug  (f'XXX  are cards suited?  {self.utils.checkHandCondition(self.hand, "suited")}')
         self.log.debug  (f'XXXX Cards Score  {self.utils.getHandValue(self.hand, "score")}')
         self.quality = self.define_hole_cards_quality()
+        self.log.debug(f"Hand is {self.hand} with quality {self.quality}")
 
     def deal_flop(self, request):
         game = request.GET
         flop = game.getlist('flop')
         self.hand = self.hand + flop
         self.log.debug (f"Flop cards are : {flop}")
-        self.quality = self.define_flop_cards_quality()
+        self.quality = self.define_flop_quality()
+        self.log.debug(f"Hand is {self.hand} with quality {self.quality}")
+
+    def deal_turn(self, request):
+        game = request.GET
+        turn = game.getlist('turn')
+        self.hand = self.hand + turn
+        self.log.debug (f"Turn card is : {turn}")
+        self.quality = self.define_turn_quality()
+        self.log.debug(f"Hand is {self.hand} with quality {self.quality}")
+
+    def deal_river(self, request):
+        game = request.GET
+        river = game.getlist('river')
+        self.hand = self.hand + river
+        self.log.debug (f"River card is : {river}")
+        self.quality = self.define_river_quality()
+        self.log.debug(f"Hand is {self.hand} with quality {self.quality}")
 
     def pre_flop_bet(self, request):
         return self.do_bet(request, self.define_hole_cards_quality(), 0.16)
 
     def flop_bet(self, request):
-        return self.do_bet(request, self.defineHoleCardsQuality(), 0.18)
+        return self.do_bet(request, self.define_flop_quality(), 0.18)
+
+    def turn_bet(self, request):
+            return self.do_bet(request, self.define_turn_quality(), 0.19)
+
+    def river_bet(self, request):
+        return self.do_bet(request, self.define_river_quality(), 0.195)
 
     def do_bet(self, request, card_quality, round_equity_factor):
         # need a combination of hole quality.
@@ -57,7 +81,7 @@ class PykerBot(object):
         minimum_bet = int(game['minimumBet'])
         current_call = int(game['currentCall'])
         pot = int(game['pot'])
-        chip_stack = int[game['chipStack']]
+        chip_stack = int(game['chipStack'])
         card_equity = self.quality * round_equity_factor
         if card_equity < 2* round_equity_factor or current_call > chip_stack:
             return  {"amount":0,"betType":Bet.fold.value,"response":""}
@@ -145,7 +169,7 @@ class PykerBot(object):
         if ((self.utils.checkHandCondition(self.hand, "containsStraight") and
                 self.utils.checkHandCondition(self.hand, "containsFlush")) or
                 self.utils.checkHandCondition(self.hand, "containsFourOfAKind") or
-                (self.utils.checkHandCondition(self.hand, "containsFullHouse") and self.utils.getHandValue(self.hand, "scoreFullHouse" > 140))):
+                (self.utils.checkHandCondition(self.hand, "containsFullHouse") and (self.utils.getHandValue(self.hand, "scoreFullHouse") > 140))):
             return 5
 
         if (self.utils.checkHandCondition(self.hand, "containsThreeOfAKind") or

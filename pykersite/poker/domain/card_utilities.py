@@ -1,5 +1,7 @@
 
 import json
+import logging
+
 from urllib import request
 from urllib import parse
 from django.conf import settings
@@ -8,6 +10,7 @@ class CardUtilities(object):
     json_result = None
     hand = None
     value =-1
+    log = logging.getLogger('pyker')
 
     def refreshIfNeeded(self, p_hand, p_value=-1):
         if CardUtilities.hand != p_hand or CardUtilities.value != p_value:
@@ -21,10 +24,11 @@ class CardUtilities(object):
             # now we have updated hand data if necessary
 
     def constructUrl(self, p_hand, value):
-        print (f"Trying to construct URL with {p_hand}")
+        self.log.debug (f"Trying to construct URL with {p_hand}")
         hand_tuple = tuple({('myHand',x) for x in p_hand})
-        constructed_url = "http://{}?{}{}".format(settings.CARD_UTILITIES_BASE_URL,parse.urlencode(hand_tuple), value)
-        print (f"Constructed URL is {constructed_url}")
+        value_tuple = {'value': value}
+        constructed_url = "http://{}?{}{}".format(settings.CARD_UTILITIES_BASE_URL,parse.urlencode(hand_tuple), parse.urlencode(value_tuple))
+        self.log.debug (f"Constructed URL is {constructed_url}")
         return constructed_url
 
     def checkHandCondition(self, my_hand, property, other_hand=None,  value=-1):

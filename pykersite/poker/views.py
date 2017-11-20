@@ -28,12 +28,27 @@ def init(request):
     game = request.GET
     pykerbot.init(request)
     log.debug (f"Game map is {game}")
-    log.debug(f"Game is: {game['gameID']} with blinds {game['smallBlind']}/{game['bigBlind']}")
+    log.debug(f"Starting Game: {game['gameID']} with blinds {game['smallBlind']}/{game['bigBlind']}")
     return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"PykerBot"})))
 
 def deal_hole_cards(request):
-    log.info("in views.py - deal_hole_cards")
+    log.info("->in views.py - deal_hole_cards")
     pykerbot.deal_hole_cards(request)
+    return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"ok"})))
+
+def deal_flop(request):
+    log.info("->in views.py - deal_flop")
+    pykerbot.deal_flop(request)
+    return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"ok"})))
+
+def deal_turn(request):
+    log.info("->in views.py - deal_turn")
+    pykerbot.deal_turn(request)
+    return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"ok"})))
+
+def deal_river(request):
+    log.info("->in views.py - deal_river")
+    pykerbot.deal_river(request)
     return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"ok"})))
 
 def pre_flop_bet(request):
@@ -42,34 +57,51 @@ def pre_flop_bet(request):
     current_call = int(game['currentCall'])
     my_pot = int(game['pot'])
     my_chip_stack = game['chipStack']
-    res = bot.PykerBot.pre_flop_bet(current_call, minimum_bet, my_pot, my_chip_stack)
-    print (f"Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
-    return HttpResponse(json.dumps(res))
-
-def deal_flop(request):
-    game = request.GET
-    print (f"Flop cards are : {game.getlist('flop')}")
-    return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"ok"})))
+    print (f"pre-flop bet. Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
+    result = pykerbot.pre_flop_bet(request)
+    return HttpResponse(json.dumps(result))
 
 def flop_bet(request):
     game = request.GET
-    print (f"Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
+    minimum_bet = int(game['minimumBet'])
+    current_call = int(game['currentCall'])
+    my_pot = int(game['pot'])
+    my_chip_stack = game['chipStack']
+    print (f"flop bet. Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
     #just fold for now.. for testing purposes.
     return HttpResponse(json.dumps(dict({"amount":0,"betType":FOLD,"response":"ok"})))
-def deal_turn(request):
-    return HttpResponse("Hello, you are in deal_turn. ")
+    result = pykerbot.flop_bet(request)
+    return HttpResponse(json.dumps(result))
 
 def turn_bet(request):
-    return HttpResponse("Hello, you are in turn_bet. ")
-
-def deal_river(request):
-    return HttpResponse("Hello, you are in deal_river. ")
+    game = request.GET
+    minimum_bet = int(game['minimumBet'])
+    current_call = int(game['currentCall'])
+    my_pot = int(game['pot'])
+    my_chip_stack = game['chipStack']
+    print (f"turn bet. Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
+    #just fold for now.. for testing purposes.
+    return HttpResponse(json.dumps(dict({"amount":0,"betType":FOLD,"response":"ok"})))
+    result = pykerbot.turn_bet(request)
+    return HttpResponse(json.dumps(result))
 
 def river_bet(request):
-    return HttpResponse("Hello, you are in river_bet. ")
+    game = request.GET
+    minimum_bet = int(game['minimumBet'])
+    current_call = int(game['currentCall'])
+    my_pot = int(game['pot'])
+    my_chip_stack = game['chipStack']
+    print (f"turn bet. Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
+    #just fold for now.. for testing purposes.
+    return HttpResponse(json.dumps(dict({"amount":0,"betType":FOLD,"response":"ok"})))
+    result = pykerbot.turn_bet(request)
+    return HttpResponse(json.dumps(result))
 
 def end_hand(request):
+    #todo:  did I win?
     return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"ok"})))
 
 def end_game(request):
+    #todo:  did I win?
     return HttpResponse(json.dumps(dict({"amount":0,"betType":0,"response":"ok"})))
+
