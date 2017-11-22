@@ -69,7 +69,6 @@ def flop_bet(request):
     my_chip_stack = game['chipStack']
     print (f"flop bet. Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
     #just fold for now.. for testing purposes.
-    return HttpResponse(json.dumps(dict({"amount":0,"betType":FOLD,"response":"ok"})))
     result = pykerbot.flop_bet(request)
     return HttpResponse(json.dumps(result))
 
@@ -81,7 +80,6 @@ def turn_bet(request):
     my_chip_stack = game['chipStack']
     print (f"turn bet. Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
     #just fold for now.. for testing purposes.
-    return HttpResponse(json.dumps(dict({"amount":0,"betType":FOLD,"response":"ok"})))
     result = pykerbot.turn_bet(request)
     return HttpResponse(json.dumps(result))
 
@@ -93,7 +91,6 @@ def river_bet(request):
     my_chip_stack = game['chipStack']
     print (f"turn bet. Pot : {game['pot']}, my chips: {game['chipStack']}, current minimum bet : {minimum_bet}")
     #just fold for now.. for testing purposes.
-    return HttpResponse(json.dumps(dict({"amount":0,"betType":FOLD,"response":"ok"})))
     result = pykerbot.turn_bet(request)
     return HttpResponse(json.dumps(result))
 

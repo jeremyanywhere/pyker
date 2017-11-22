@@ -59,18 +59,18 @@ class PykerBot(object):
         self.log.debug(f"Hand is {self.hand} with quality {self.quality}")
 
     def pre_flop_bet(self, request):
-        return self.do_bet(request, self.define_hole_cards_quality(), 0.16)
+        return self.do_bet(request, 0.16)
 
     def flop_bet(self, request):
-        return self.do_bet(request, self.define_flop_quality(), 0.18)
+        return self.do_bet(request, 0.18)
 
     def turn_bet(self, request):
-            return self.do_bet(request, self.define_turn_quality(), 0.19)
+            return self.do_bet(request, 0.19)
 
     def river_bet(self, request):
-        return self.do_bet(request, self.define_river_quality(), 0.195)
+        return self.do_bet(request, 0.195)
 
-    def do_bet(self, request, card_quality, round_equity_factor):
+    def do_bet(self, request, round_equity_factor):
         # need a combination of hole quality.
         # since we aren't calculating actual pot odds, but a 1-5 strength evaluation of chances.. we have to go with
         # 0% chance to n% chance.  We call our
@@ -83,6 +83,7 @@ class PykerBot(object):
         pot = int(game['pot'])
         chip_stack = int(game['chipStack'])
         card_equity = self.quality * round_equity_factor
+        self.log.debug(f"---   first check  card_equity-{card_equity}, round equity factor-{round_equity_factor} and quality-{self.quality} ")
         if card_equity < 2* round_equity_factor or current_call > chip_stack:
             return  {"amount":0,"betType":Bet.fold.value,"response":""}
 
@@ -90,6 +91,8 @@ class PykerBot(object):
 
         # start by trying a bet..
         pot_odds = (minimum_bet / (minimum_bet + pot))
+        self.log.debug(f"***   Assessing bet with card_equity-{card_equity}, round equity factor-{round_equity_factor} ")
+        self.log.debug(f"***       quality-{self.quality}, current call-{current_call}, pot-{pot}, pot odds-{pot_odds}")
         if card_equity >= pot_odds:
             if (minimum_bet < chip_stack):
                 return {"amount":minimum_bet,"betType":Bet.bet.value,"response":""}
@@ -113,7 +116,6 @@ class PykerBot(object):
     def define_hole_cards_quality(self):
         # break down int 1-5, 5 being the highest.
         # if
-        self.log.debug(f"Defining hole cards quality..{self.quality}")
         # pair of aces, kings, queens or jacks is 5, 10-7 is 4 and any other pairs are a 3.
         if self.hand[0][0] == self.hand[1][0]:
             if any(self.hand[0][0] in c for c in 'AKQJ'):
@@ -149,17 +151,18 @@ class PykerBot(object):
             return 5
 
         if (self.utils.checkHandCondition(self.hand, "containsThreeOfAKind") or
+                self.utils.checkHandCondition(self.hand, "containsTwoPairs") or
             self.utils.checkHandCondition(self.hand, "containsOpenEndedStraight") or
                 self.utils.checkHandCondition(self.hand, "maxSuitCount") == 3):
             return 4
 
-        if (self.utils.checkHandCondition(self.hand, "containsGutShotStraight")  or
+        if (self.utils.checkHandCondition(self.hand, "containsGutShotStraight") or
                 (self.utils.checkHandCondition(self.hand, "exactlyOnePair") and
             self.utils.getHandValue(self.hand, "scoreNOfAKind", value=2) > 2304)):
             return 3
 
         if (self.utils.checkHandCondition(self.hand, "exactlyOnePair") and
-                         self.utils.getHandValue(self.hand, "scoreNOfAKind", value=2) < 2305):
+                self.utils.getHandValue(self.hand, "scoreNOfAKind", value=2) < 2305):
             return 2
 
         return 1  # it is a folder...
@@ -173,6 +176,7 @@ class PykerBot(object):
             return 5
 
         if (self.utils.checkHandCondition(self.hand, "containsThreeOfAKind") or
+                self.utils.checkHandCondition(self.hand, "containsTwoPairs") or
             self.utils.checkHandCondition(self.hand, "containsFlush")):
             return 4
 
@@ -202,6 +206,7 @@ class PykerBot(object):
             return 4
 
         if (self.utils.checkHandCondition(self.hand, "containsThreeOfAKind") or
+                self.utils.checkHandCondition(self.hand, "containsTwoPairs") or
                 self.utils.checkHandCondition(self.hand, "containsFlush")):
             return 3
 
