@@ -10,6 +10,7 @@ class PykerBot(object):
 
     def __init__(self):
         self.log = logging.getLogger('pyker')
+        self.log.debug(f"new Pykerbot Object {self} ")
         self.utils = CardUtilities()
         self.betTotal = 0
 
@@ -20,6 +21,7 @@ class PykerBot(object):
         self.smallBlind = game['smallBlind']
         self.bigBlind = game['bigBlind']
         self.gameID = game['gameID']
+        self.log.debug(f"--->This new Pykerbot Object {self} ")
         self.quality = 0  # range 0-5
         self.log.debug(f"Game is: {self.gameID} with blinds {self.smallBlind}/{self.bigBlind}")
         self.hand = []
@@ -65,7 +67,7 @@ class PykerBot(object):
         return self.do_bet(request, 0.18)
 
     def turn_bet(self, request):
-            return self.do_bet(request, 0.19)
+        return self.do_bet(request, 0.19)
 
     def river_bet(self, request):
         return self.do_bet(request, 0.195)
@@ -82,6 +84,7 @@ class PykerBot(object):
         current_call = int(game['currentCall'])
         pot = int(game['pot'])
         chip_stack = int(game['chipStack'])
+        self.log.debug(f"Self.quality is {self.quality}")
         card_equity = self.quality * round_equity_factor
         self.log.debug(f"---   first check  card_equity-{card_equity}, round equity factor-{round_equity_factor} and quality-{self.quality} ")
         if card_equity < 2* round_equity_factor or current_call > chip_stack:
@@ -138,7 +141,7 @@ class PykerBot(object):
             return 3
         elif self.hand[0][0] == 'Q' or self.hand[1][0] == 'Q':
             return 2
-
+        return 1
 
     def define_flop_quality(self):
         # the 5s are all the obvious ones.
