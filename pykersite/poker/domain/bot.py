@@ -64,13 +64,13 @@ class PykerBot(object):
         return self.do_bet(request, 2.0)
 
     def flop_bet(self, request):
-        return self.do_bet(request, 0.18)
+        return self.do_bet(request, 2)
 
     def turn_bet(self, request):
-        return self.do_bet(request, 0.19)
+        return self.do_bet(request, 2)
 
     def river_bet(self, request):
-        return self.do_bet(request, 0.195)
+        return self.do_bet(request, 2)
 
     def do_bet(self, request, round_equity_factor):
         # need a combination of hole quality.
