@@ -6,7 +6,7 @@ from .bet import Bet
 
 class PykerBot(object):
     ACE_LOW = "0A23456789XJQK"
-    ACE_HIGH = "0123456789XQKA"
+    ACE_HIGH = "0123456789XJQKA"
 
     def __init__(self):
         self.log = logging.getLogger('pyker')
@@ -18,8 +18,8 @@ class PykerBot(object):
     def init(self, request):
         game = request.GET
         self.log.debug (f"Game map is {game}")
-        self.smallBlind = game['smallBlind']
-        self.bigBlind = game['bigBlind']
+        self.smallBlind = int(game['smallBlind'])
+        self.bigBlind = int(game['bigBlind'])
         self.gameID = game['gameID']
         self.log.debug(f"--->This new Pykerbot Object {self} ")
         self.quality = 0  # range 0-5
@@ -61,7 +61,7 @@ class PykerBot(object):
         self.log.debug(f"Hand is {self.hand} with quality {self.quality}")
 
     def pre_flop_bet(self, request):
-        return self.do_bet(request, 0.16)
+        return self.do_bet(request, 2.0)
 
     def flop_bet(self, request):
         return self.do_bet(request, 0.18)
@@ -87,34 +87,49 @@ class PykerBot(object):
         self.log.debug(f"Self.quality is {self.quality}")
         card_equity = self.quality * round_equity_factor
         self.log.debug(f"---   first check  card_equity-{card_equity}, round equity factor-{round_equity_factor} and quality-{self.quality} ")
-        if card_equity < 2* round_equity_factor or current_call > chip_stack:
-            return  {"amount":0,"betType":Bet.fold.value,"response":""}
 
-        # from java interface: numRaises,  def pot, def currentCall, def minimumBet, def chipStack
+        # if cards are crap, fold. But not if you can check.
+        if card_equity < 2* round_equity_factor or current_call > chip_stack:
+            if (current_call == 0): # no one has bet
+                return Bet.check()
+            return  Bet.fold()
 
         # start by trying a bet..
-        pot_odds = (minimum_bet / (minimum_bet + pot))
-        self.log.debug(f"***   Assessing bet with card_equity-{card_equity}, round equity factor-{round_equity_factor} ")
-        self.log.debug(f"***       quality-{self.quality}, current call-{current_call}, pot-{pot}, pot odds-{pot_odds}")
-        if card_equity >= pot_odds:
-            if (minimum_bet < chip_stack):
-                return {"amount":minimum_bet,"betType":Bet.bet.value,"response":""}
-            else:
-                if card_equity < 5 * round_equity_factor:
-                    return {"amount":0,"betType":Bet.fold.value,"response":""}
+        # we bet if the hand is strong.
+        if self.quality > 2:
+            if current_call == 0:
+                self.log.debug(f"***  Hand of quality {self.quality} and no one has bet yet, so betting big blind")
+                return self.bet_or_fold(self.bigBlind, chip_stack)
+            pot_odds = (minimum_bet / (minimum_bet + pot))
+            self.log.debug(f"***   Assessing bet with card_equity-{card_equity}, round equity factor-{round_equity_factor} ")
+            self.log.debug(f"***       quality-{self.quality}, current call-{current_call}, pot-{pot}, pot odds-{pot_odds}")
+            self.log.debug(f"***       cards are {self.hand}")
+            if card_equity >= pot_odds:
+                if (minimum_bet < chip_stack): # we have enough to bet.
+                    return Bet.bet(minimum_bet)
                 else:
-                    return {"amount":chip_stack,"betType":Bet.all_in.value,"response":""}
+                    if card_equity < 5 * round_equity_factor:
+                        return Bet.fold()
+                    else:
+                        return Bet.all_in(chip_stack)
+        else:
         # now try with a call
-        pot_odds = (current_call / (current_call + pot))
-        if card_equity >= pot_odds:
-            if current_call < chip_stack:
-                return {"amount":current_call,"betType":Bet.bet.value,"response":""}
-            else:
-                if card_equity < 5 * round_equity_factor:
-                    return {"amount":0,"betType":Bet.fold.value,"response":""}
+            if current_call == 0:
+                self.log.debug(f"***  Hand of quality {self.quality} and no one has bet yet, so checking ")
+                return Bet.check()
+            pot_odds = (current_call / (current_call + pot))
+            self.log.debug(f"***   Assessing bet with card_equity-{card_equity}, round equity factor-{round_equity_factor} ")
+            self.log.debug(f"***       quality-{self.quality}, current call-{current_call}, pot-{pot}, pot odds-{pot_odds}")
+            self.log.debug(f"***       cards are {self.hand}")
+            if card_equity >= pot_odds:
+                if current_call < chip_stack:
+                    return Bet.call(current_call)
                 else:
-                    return {"amount":chip_stack,"betType":Bet.all_in.value,"response":""}
-        return {"amount":0,"betType":Bet.fold.value,"response":""}
+                    if card_equity < 5 * round_equity_factor:
+                        return Bet.fold()
+                    else:
+                        return Bet.all_in(chip_stack)
+            return Bet.fold()
 
     def define_hole_cards_quality(self):
         # break down int 1-5, 5 being the highest.
@@ -133,13 +148,11 @@ class PykerBot(object):
             if self.ACE_HIGH.index(self.hand[0][0]) > 11 and self.ACE_HIGH.index(self.hand[1][0]) > 11:
                 return  4
             else:
-                return 3
+                return 2
         # not suited or paired
         elif self.hand[0][0] == 'A' or self.hand[1][0] == 'A':
-            return 3
+            return 2
         elif self.hand[0][0] == 'K' or self.hand[1][0] == 'K':
-            return 3
-        elif self.hand[0][0] == 'Q' or self.hand[1][0] == 'Q':
             return 2
         return 1
 
@@ -219,3 +232,24 @@ class PykerBot(object):
             return 2
 
         return 1  # it is a folder...
+
+    def call_or_fold(self, amount, chip_stack):
+        if amount < chip_stack:
+            return Bet.call(amount)
+        if amount >= chip_stack:
+            return Bet.fold()
+    def bet_or_fold(self, amount, chip_stack):
+        if amount < chip_stack:
+            return Bet.bet(amount)
+        if amount >= chip_stack:
+            return Bet.fold()
+
+    def call_or_go_all_in(self, amount, chip_stack):
+        if amount < chip_stack:
+            return Bet.call(amount)
+        return Bet.all_in(amount)
+
+    def bet_or_go_all_in(self, amount, chip_stack):
+        if amount < chip_stack:
+            return Bet.bet(amount)
+        return Bet.all_in(amount)
